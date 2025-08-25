@@ -20,9 +20,17 @@ class TonePredictor:
         # Tự động chọn đường dẫn mô hình nếu không được cung cấp
         if model_path is None:
             if self.model_type == "lstm":
-                self.model_path = "trained_models/lstm_model_final.h5"
+                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
+                if os.path.exists("trained_models/lstm_model_final_fixed.h5"):
+                    self.model_path = "trained_models/lstm_model_final_fixed.h5"
+                else:
+                    self.model_path = "trained_models/lstm_model_final.h5"
             elif self.model_type == "mlp":
-                self.model_path = "trained_models/mlp_model_final.h5"
+                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
+                if os.path.exists("trained_models/mlp_model_final_fixed.h5"):
+                    self.model_path = "trained_models/mlp_model_final_fixed.h5"
+                else:
+                    self.model_path = "trained_models/mlp_model_final.h5"
             else:
                 raise ValueError(f"Loại mô hình không hỗ trợ: {model_type}. Chỉ hỗ trợ 'lstm' hoặc 'mlp'")
         else:
@@ -53,6 +61,10 @@ class TonePredictor:
             
             # Tải label encoder
             encoder_path = self.model_path.replace("_final.h5", "_label_encoder.pkl")
+            # Thử tải label encoder mới trước
+            if "_fixed.h5" in self.model_path:
+                encoder_path = self.model_path.replace("_final_fixed.h5", "_label_encoder_fixed.pkl")
+            
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
                     self.label_encoder = pickle.load(f)
