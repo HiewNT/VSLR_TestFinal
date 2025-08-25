@@ -15,36 +15,14 @@ class TonePredictor:
         self.model = None
         self.model_type = model_type.lower()
         self.sequence_length = TONE_FRAMES_COUNT  # 30 frame
-        self.prediction_threshold = TONE_CONFIDENCE_THRESHOLD  # 0.95
+        self.prediction_threshold = TONE_CONFIDENCE_THRESHOLD  # 0.8
         
         # Tự động chọn đường dẫn mô hình nếu không được cung cấp
         if model_path is None:
             if self.model_type == "lstm":
-<<<<<<< HEAD
-                # Thử mô hình tương thích trước, sau đó đến mô hình cũ
-                if os.path.exists("trained_models/lstm_model_final_compatible.h5"):
-                    self.model_path = "trained_models/lstm_model_final_compatible.h5"
-                elif os.path.exists("trained_models/lstm_model_final_fixed.h5"):
-=======
-                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
-                if os.path.exists("trained_models/lstm_model_final_fixed.h5"):
->>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
-                    self.model_path = "trained_models/lstm_model_final_fixed.h5"
-                else:
-                    self.model_path = "trained_models/lstm_model_final.h5"
+                self.model_path = "trained_models/lstm_model_final.h5"
             elif self.model_type == "mlp":
-<<<<<<< HEAD
-                # Thử mô hình tương thích trước, sau đó đến mô hình cũ
-                if os.path.exists("trained_models/mlp_model_final_compatible.h5"):
-                    self.model_path = "trained_models/mlp_model_final_compatible.h5"
-                elif os.path.exists("trained_models/mlp_model_final_fixed.h5"):
-=======
-                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
-                if os.path.exists("trained_models/mlp_model_final_fixed.h5"):
->>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
-                    self.model_path = "trained_models/mlp_model_final_fixed.h5"
-                else:
-                    self.model_path = "trained_models/mlp_model_final.h5"
+                self.model_path = "trained_models/mlp_model_final.h5"
             else:
                 raise ValueError(f"Loại mô hình không hỗ trợ: {model_type}. Chỉ hỗ trợ 'lstm' hoặc 'mlp'")
         else:
@@ -114,8 +92,8 @@ class TonePredictor:
             
             # Tải label encoder
             encoder_path = self.model_path.replace("_final.h5", "_label_encoder.pkl")
-<<<<<<< HEAD
-            # Thử tải label encoder tương thích trước
+            
+            # Thử tải label encoder tương thích
             if "_compatible.h5" in self.model_path:
                 encoder_path = self.model_path.replace("_final_compatible.h5", "_label_encoder_compatible.pkl")
             elif "_fixed.h5" in self.model_path:
@@ -123,11 +101,6 @@ class TonePredictor:
                 # Nếu không tìm thấy, thử tải label encoder chung
                 if not os.path.exists(encoder_path):
                     encoder_path = "trained_models/label_encoder_fixed.pkl"
-=======
-            # Thử tải label encoder mới trước
-            if "_fixed.h5" in self.model_path:
-                encoder_path = self.model_path.replace("_final_fixed.h5", "_label_encoder_fixed.pkl")
->>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
             
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
@@ -158,8 +131,6 @@ class TonePredictor:
         # Kiểm tra input shape mong đợi của mô hình
         if self.model is not None and hasattr(self.model, 'input_shape'):
             expected_shape = self.model.input_shape
-            print(f"[DEBUG] Expected input shape: {expected_shape}")
-            print(f"[DEBUG] Current data shape: {keypoints_array.shape}")
             
             # Nếu mô hình mong đợi 3D input (batch, sequence, features)
             if len(expected_shape) == 3:
@@ -188,7 +159,6 @@ class TonePredictor:
 
         try:
             X = self.preprocess_keypoints(keypoints_sequence)
-            print(f"[DEBUG] Preprocessed input shape: {X.shape}")
             
             predictions = self.model.predict(X, verbose=0)[0]
             predicted_idx = np.argmax(predictions)
@@ -202,7 +172,6 @@ class TonePredictor:
             self.current_prediction = predicted_label
             self.current_confidence = confidence
             
-            print(f"[DEBUG] Prediction: {predicted_label}, Confidence: {confidence:.3f}")
             return self.current_prediction, self.current_confidence
         except Exception as e:
             print(f"[ERROR] Lỗi khi dự đoán dấu thanh với mô hình {self.model_type.upper()}: {e}")
