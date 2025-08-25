@@ -10,6 +10,11 @@ class TextProcessor:
         self.sentence = ""
         self.current_word = ""
         self.just_processed_character = False  # Thêm thuộc tính này để tránh lỗi truy cập
+        
+        # Cache cho performance
+        self._display_text_cache = ""
+        self._full_text_cache = ""
+        self._cache_dirty = True
     
     def apply_tone(self, char, tone):
         """Apply tone to a character"""
@@ -51,6 +56,7 @@ class TextProcessor:
                     self.current_word[:-1] + 
                     SPECIAL_CHARACTER_REPLACE[raw_character][last_char]
                 )
+                self._cache_dirty = True  # Đánh dấu cache cần update
                 return True
             
             # Xử lý ký tự Đ
@@ -59,10 +65,12 @@ class TextProcessor:
             
             # Thêm ký tự mới
             self.current_word += mapped_character
+            self._cache_dirty = True  # Đánh dấu cache cần update
         else:
             # Ký tự đầu tiên của từ
             if mapped_character not in ["Mu", "Munguoc", "Rau"]:
                 self.current_word = mapped_character
+                self._cache_dirty = True  # Đánh dấu cache cần update
         
         return True
     
@@ -120,25 +128,58 @@ class TextProcessor:
             last_char = self.current_word[-1]
             new_char = self.apply_tone(last_char, tone)
             self.current_word = self.current_word[:-1] + new_char
+            self._cache_dirty = True  # Đánh dấu cache cần update
     
     def finalize_word(self):
         """Add current word to sentence"""
         if self.current_word:
             self.sentence += self.current_word + " "
             self.current_word = ""
+            self._cache_dirty = True  # Đánh dấu cache cần update
     
     def clear_text(self):
         """Clear all text"""
         self.sentence = ""
         self.current_word = ""
+        self._cache_dirty = True  # Đánh dấu cache cần update
+    
+    def delete_last_word(self):
+        """Delete the last character from current word or sentence"""
+        deleted = False
+        
+        if self.current_word and len(self.current_word) > 0:
+            # Nếu có từ hiện tại, xóa ký tự cuối cùng
+            self.current_word = self.current_word[:-1]
+            self._cache_dirty = True  # Đánh dấu cache cần update
+            deleted = True
+        elif self.sentence and len(self.sentence) > 0:
+            # Nếu có câu, xóa ký tự cuối cùng (bỏ qua dấu cách ở cuối)
+            sentence = self.sentence.rstrip()  # Loại bỏ dấu cách ở cuối
+            if len(sentence) > 0:
+                # Xóa ký tự cuối cùng của sentence (không phải dấu cách)
+                self.sentence = sentence[:-1] + " "  # Giữ lại dấu cách
+            else:
+                # Nếu sentence chỉ còn dấu cách, xóa hết
+                self.sentence = ""
+            self._cache_dirty = True  # Đánh dấu cache cần update
+            deleted = True
+            
+        return deleted
+    
+
     
     def get_display_text(self):
-        """Get formatted display text"""
-        display_text = ""
-        for char in self.sentence + self.current_word:
-            display_text += char_display_map.get(char, char)
-        return display_text.strip()
+        """Get formatted display text with caching"""
+        if self._cache_dirty:
+            display_text = ""
+            for char in self.sentence + self.current_word:
+                display_text += char_display_map.get(char, char)
+            self._display_text_cache = display_text.strip()
+            self._cache_dirty = False
+        return self._display_text_cache
     
     def get_full_text(self):
-        """Get full text including current word"""
-        return self.sentence + self.current_word
+        """Get full text including current word with caching"""
+        if self._cache_dirty:
+            self._full_text_cache = self.sentence + self.current_word
+        return self._full_text_cache

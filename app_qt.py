@@ -167,6 +167,18 @@ class ModernSignLanguageQt(QMainWindow):
             QPushButton#clearBtn:hover {
                 background-color: #e67e22;
             }
+            QPushButton#deleteLastWordBtn {
+                background-color: #9b59b6;
+            }
+            QPushButton#deleteLastWordBtn:hover {
+                background-color: #8e44ad;
+            }
+            QPushButton#saveBtn {
+                background-color: #16a085;
+            }
+            QPushButton#saveBtn:hover {
+                background-color: #138d75;
+            }
             QLabel#statusLabel {
                 font: bold 16px 'Segoe UI';
                 color: #2c3e50;
@@ -286,9 +298,21 @@ class ModernSignLanguageQt(QMainWindow):
         self.clear_btn.setObjectName("clearBtn")
         self.clear_btn.clicked.connect(self.clear_all_text)
         
+        self.delete_last_word_btn = QPushButton("⌫ Xóa ký tự cuối")
+        self.delete_last_word_btn.setObjectName("deleteLastWordBtn")
+        self.delete_last_word_btn.clicked.connect(self.delete_last_word)
+        self.delete_last_word_btn.setToolTip("Xóa ký tự cuối cùng của từ hiện tại")
+        
+        self.save_btn = QPushButton("💾 Lưu file")
+        self.save_btn.setObjectName("saveBtn")
+        self.save_btn.clicked.connect(self.save_text_to_file)
+        self.save_btn.setToolTip("Lưu văn bản vào file")
+        
         controls_layout.addWidget(self.start_btn)
         controls_layout.addWidget(self.stop_btn)
         controls_layout.addWidget(self.clear_btn)
+        controls_layout.addWidget(self.delete_last_word_btn)
+        controls_layout.addWidget(self.save_btn)
         controls_layout.addStretch()
         
         video_layout.addLayout(controls_layout)
@@ -387,6 +411,77 @@ class ModernSignLanguageQt(QMainWindow):
         except Exception as e:
             print(f"[ERROR] Lỗi khi xóa văn bản: {e}")
             self.show_error(f"Không thể xóa văn bản: {str(e)}")
+    
+    def delete_last_word(self):
+        """Xóa ký tự cuối cùng của từ hiện tại"""
+        try:
+            # Xóa ký tự cuối
+            deleted = self.frame_processor.text_processor.delete_last_word()
+            
+            if deleted:
+                # Cập nhật hiển thị
+                display_text = self.frame_processor.text_processor.get_display_text()
+                if display_text:
+                    self.text_display.setPlainText(display_text)
+                else:
+                    self.text_display.setPlainText("Văn bản sẽ hiển thị ở đây...")
+                
+                # Reset các label hiển thị
+                self.char_label.setText("-")
+                self.tone_label.setText("-")
+                self.confidence_label.setText("0.00")
+                
+                print("[INFO] Đã xóa ký tự cuối")
+            else:
+                print("[INFO] Không có ký tự nào để xóa")
+                
+        except Exception as e:
+            print(f"[ERROR] Lỗi khi xóa ký tự cuối: {e}")
+            self.show_error(f"Không thể xóa ký tự cuối: {str(e)}")
+    
+    def save_text_to_file(self):
+        """Lưu văn bản vào file"""
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+            import datetime
+            
+            # Lấy văn bản hiện tại
+            text = self.frame_processor.text_processor.get_full_text()
+            
+            if not text.strip():
+                self.show_error("Không có văn bản để lưu!")
+                return
+            
+            # Tạo tên file mặc định với timestamp
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"vslr_text_{timestamp}.txt"
+            
+            # Mở dialog chọn file
+            filename, _ = QFileDialog.getSaveFileName(
+                self,
+                "Lưu văn bản",
+                default_filename,
+                "Text Files (*.txt);;All Files (*)"
+            )
+            
+            if filename:
+                # Lưu file
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                
+                print(f"[INFO] Đã lưu văn bản vào: {filename}")
+                
+                # Hiển thị thông báo thành công
+                from PyQt5.QtWidgets import QMessageBox
+                QMessageBox.information(
+                    self,
+                    "Thành công",
+                    f"Đã lưu văn bản vào file:\n{filename}"
+                )
+                
+        except Exception as e:
+            print(f"[ERROR] Lỗi khi lưu file: {e}")
+            self.show_error(f"Không thể lưu file: {str(e)}")
             
     def stop_camera(self):
         """Dừng camera"""

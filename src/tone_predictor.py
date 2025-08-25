@@ -20,9 +20,21 @@ class TonePredictor:
         # Tự động chọn đường dẫn mô hình nếu không được cung cấp
         if model_path is None:
             if self.model_type == "lstm":
-                self.model_path = "trained_models/lstm_model_final.h5"
+                # Thử mô hình tương thích trước, sau đó đến mô hình cũ
+                if os.path.exists("trained_models/lstm_model_final_compatible.h5"):
+                    self.model_path = "trained_models/lstm_model_final_compatible.h5"
+                elif os.path.exists("trained_models/lstm_model_final_fixed.h5"):
+                    self.model_path = "trained_models/lstm_model_final_fixed.h5"
+                else:
+                    self.model_path = "trained_models/lstm_model_final.h5"
             elif self.model_type == "mlp":
-                self.model_path = "trained_models/mlp_model_final.h5"
+                # Thử mô hình tương thích trước, sau đó đến mô hình cũ
+                if os.path.exists("trained_models/mlp_model_final_compatible.h5"):
+                    self.model_path = "trained_models/mlp_model_final_compatible.h5"
+                elif os.path.exists("trained_models/mlp_model_final_fixed.h5"):
+                    self.model_path = "trained_models/mlp_model_final_fixed.h5"
+                else:
+                    self.model_path = "trained_models/mlp_model_final.h5"
             else:
                 raise ValueError(f"Loại mô hình không hỗ trợ: {model_type}. Chỉ hỗ trợ 'lstm' hoặc 'mlp'")
         else:
@@ -44,15 +56,63 @@ class TonePredictor:
 
         try:
             print(f"[INFO] Đang tải mô hình {self.model_type.upper()} từ: {self.model_path}")
-            self.model = tf.keras.models.load_model(self.model_path)
+            
+            # Thử tải mô hình với custom_objects để xử lý lỗi tương thích
+            try:
+                self.model = tf.keras.models.load_model(self.model_path)
+            except Exception as e:
+                print(f"[WARNING] Lỗi khi tải mô hình thông thường: {e}")
+                print("[INFO] Thử tải với custom_objects...")
+                
+                # Tạo custom_objects để xử lý lỗi batch_shape
+                def custom_input_layer(*args, **kwargs):
+                    # Loại bỏ batch_shape nếu có
+                    if 'batch_shape' in kwargs:
+                        del kwargs['batch_shape']
+                    return tf.keras.layers.InputLayer(*args, **kwargs)
+                
+                custom_objects = {
+                    'InputLayer': custom_input_layer
+                }
+                
+                try:
+                    self.model = tf.keras.models.load_model(
+                        self.model_path, 
+                        custom_objects=custom_objects,
+                        compile=False
+                    )
+                    print("[INFO] Tải mô hình thành công với custom_objects!")
+                except Exception as e2:
+                    print(f"[ERROR] Vẫn không thể tải mô hình: {e2}")
+                    # Thử tải với compile=False
+                    try:
+                        self.model = tf.keras.models.load_model(
+                            self.model_path, 
+                            compile=False
+                        )
+                        print("[INFO] Tải mô hình thành công với compile=False!")
+                    except Exception as e3:
+                        print(f"[ERROR] Không thể tải mô hình: {e3}")
+                        self.model = None
+                        return
             
             # In thông tin chi tiết về mô hình
-            print(f"[INFO] Mô hình {self.model_type.upper()} đã tải thành công!")
-            print(f"[INFO] Input shape: {self.model.input_shape}")
-            print(f"[INFO] Output shape: {self.model.output_shape}")
+            if self.model is not None:
+                print(f"[INFO] Mô hình {self.model_type.upper()} đã tải thành công!")
+                print(f"[INFO] Input shape: {self.model.input_shape}")
+                print(f"[INFO] Output shape: {self.model.output_shape}")
             
             # Tải label encoder
             encoder_path = self.model_path.replace("_final.h5", "_label_encoder.pkl")
+            # Thử tải label encoder tương thích trước
+            if "_compatible.h5" in self.model_path:
+                encoder_path = self.model_path.replace("_final_compatible.h5", "_label_encoder_compatible.pkl")
+            elif "_fixed.h5" in self.model_path:
+                encoder_path = self.model_path.replace("_final_fixed.h5", "_label_encoder_fixed.pkl")
+                # Nếu không tìm thấy, thử tải label encoder chung
+                if not os.path.exists(encoder_path):
+                    encoder_path = "trained_models/label_encoder_fixed.pkl"
+            
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
                     self.label_encoder = pickle.load(f)

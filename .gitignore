@@ -139,6 +139,6 @@ dmypy.json
 Thumbs.db
 
 # Model files (if they're large)
-# *.h5
-# *.pkl
-# *.pt
+*.h5
+*.pkl
+*.pt
