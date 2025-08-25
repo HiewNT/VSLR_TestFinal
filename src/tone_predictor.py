@@ -20,18 +20,28 @@ class TonePredictor:
         # Tự động chọn đường dẫn mô hình nếu không được cung cấp
         if model_path is None:
             if self.model_type == "lstm":
+<<<<<<< HEAD
                 # Thử mô hình tương thích trước, sau đó đến mô hình cũ
                 if os.path.exists("trained_models/lstm_model_final_compatible.h5"):
                     self.model_path = "trained_models/lstm_model_final_compatible.h5"
                 elif os.path.exists("trained_models/lstm_model_final_fixed.h5"):
+=======
+                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
+                if os.path.exists("trained_models/lstm_model_final_fixed.h5"):
+>>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
                     self.model_path = "trained_models/lstm_model_final_fixed.h5"
                 else:
                     self.model_path = "trained_models/lstm_model_final.h5"
             elif self.model_type == "mlp":
+<<<<<<< HEAD
                 # Thử mô hình tương thích trước, sau đó đến mô hình cũ
                 if os.path.exists("trained_models/mlp_model_final_compatible.h5"):
                     self.model_path = "trained_models/mlp_model_final_compatible.h5"
                 elif os.path.exists("trained_models/mlp_model_final_fixed.h5"):
+=======
+                # Thử mô hình mới trước, nếu không có thì dùng mô hình cũ
+                if os.path.exists("trained_models/mlp_model_final_fixed.h5"):
+>>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
                     self.model_path = "trained_models/mlp_model_final_fixed.h5"
                 else:
                     self.model_path = "trained_models/mlp_model_final.h5"
@@ -104,6 +114,7 @@ class TonePredictor:
             
             # Tải label encoder
             encoder_path = self.model_path.replace("_final.h5", "_label_encoder.pkl")
+<<<<<<< HEAD
             # Thử tải label encoder tương thích trước
             if "_compatible.h5" in self.model_path:
                 encoder_path = self.model_path.replace("_final_compatible.h5", "_label_encoder_compatible.pkl")
@@ -112,6 +123,11 @@ class TonePredictor:
                 # Nếu không tìm thấy, thử tải label encoder chung
                 if not os.path.exists(encoder_path):
                     encoder_path = "trained_models/label_encoder_fixed.pkl"
+=======
+            # Thử tải label encoder mới trước
+            if "_fixed.h5" in self.model_path:
+                encoder_path = self.model_path.replace("_final_fixed.h5", "_label_encoder_fixed.pkl")
+>>>>>>> 8f22c2a1eb6755b480c97e0add1226e3e2b2f5db
             
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
