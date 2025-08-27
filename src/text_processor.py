@@ -182,4 +182,5 @@ class TextProcessor:
         """Get full text including current word with caching"""
         if self._cache_dirty:
             self._full_text_cache = self.sentence + self.current_word
+            self._cache_dirty = False
         return self._full_text_cache

@@ -93,7 +93,7 @@ class ModernSignLanguageQt(QMainWindow):
         # Khởi tạo AI components
         self.detector = handDetector(maxHands=1)
         self.classifier = Classifier()
-        self.tone_predictor = TonePredictor(model_type="lstm")
+        self.tone_predictor = TonePredictor()
         self.stability_detector = StabilityDetector(max_frames=12, stability_threshold=0.025)
         self.text_processor = TextProcessor()
         self.frame_processor = FrameProcessor(
@@ -173,12 +173,12 @@ class ModernSignLanguageQt(QMainWindow):
             QPushButton#deleteLastWordBtn:hover {
                 background-color: #8e44ad;
             }
-            QPushButton#saveBtn {
-                background-color: #16a085;
-            }
-            QPushButton#saveBtn:hover {
-                background-color: #138d75;
-            }
+                         QPushButton#saveBtn {
+                 background-color: #16a085;
+             }
+             QPushButton#saveBtn:hover {
+                 background-color: #138d75;
+             }
             QLabel#statusLabel {
                 font: bold 16px 'Segoe UI';
                 color: #2c3e50;
@@ -306,7 +306,13 @@ class ModernSignLanguageQt(QMainWindow):
         self.save_btn = QPushButton("💾 Lưu file")
         self.save_btn.setObjectName("saveBtn")
         self.save_btn.clicked.connect(self.save_text_to_file)
-        self.save_btn.setToolTip("Lưu văn bản vào file")
+        self.save_btn.setToolTip("Lưu văn bản vào file (Ctrl+S)")
+        
+        # Thêm shortcut Ctrl+S
+        from PyQt5.QtWidgets import QShortcut
+        from PyQt5.QtGui import QKeySequence
+        save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        save_shortcut.activated.connect(self.save_text_to_file)
         
         controls_layout.addWidget(self.start_btn)
         controls_layout.addWidget(self.stop_btn)
@@ -442,13 +448,14 @@ class ModernSignLanguageQt(QMainWindow):
     def save_text_to_file(self):
         """Lưu văn bản vào file"""
         try:
-            from PyQt5.QtWidgets import QFileDialog
+            from PyQt5.QtWidgets import QFileDialog, QMessageBox
             import datetime
+            import os
             
             # Lấy văn bản hiện tại
             text = self.frame_processor.text_processor.get_full_text()
             
-            if not text.strip():
+            if not text or not text.strip():
                 self.show_error("Không có văn bản để lưu!")
                 return
             
@@ -465,23 +472,35 @@ class ModernSignLanguageQt(QMainWindow):
             )
             
             if filename:
-                # Lưu file
+                # Đảm bảo thư mục tồn tại
+                directory = os.path.dirname(filename)
+                if directory and not os.path.exists(directory):
+                    os.makedirs(directory)
+                
+                # Lưu file với encoding UTF-8
                 with open(filename, 'w', encoding='utf-8') as f:
-                    f.write(text)
+                    f.write(text.strip())
                 
                 print(f"[INFO] Đã lưu văn bản vào: {filename}")
+                print(f"[INFO] Kích thước file: {len(text)} ký tự")
                 
                 # Hiển thị thông báo thành công
-                from PyQt5.QtWidgets import QMessageBox
                 QMessageBox.information(
                     self,
                     "Thành công",
-                    f"Đã lưu văn bản vào file:\n{filename}"
+                    f"Đã lưu văn bản vào file:\n{filename}\n\nKích thước: {len(text)} ký tự"
                 )
+            else:
+                print("[INFO] Người dùng đã hủy việc lưu file")
                 
+        except PermissionError:
+            error_msg = "Không có quyền ghi file. Hãy chọn vị trí khác hoặc chạy ứng dụng với quyền admin."
+            print(f"[ERROR] {error_msg}")
+            self.show_error(error_msg)
         except Exception as e:
-            print(f"[ERROR] Lỗi khi lưu file: {e}")
-            self.show_error(f"Không thể lưu file: {str(e)}")
+            error_msg = f"Không thể lưu file: {str(e)}"
+            print(f"[ERROR] {error_msg}")
+            self.show_error(error_msg)
             
     def stop_camera(self):
         """Dừng camera"""

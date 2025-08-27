@@ -44,6 +44,7 @@
   - Bước 1: Thực hiện ký tự cơ bản (A, O, U, E)
   - Bước 2: Thực hiện ký hiệu dấu (Mu, Munguoc, Rau)
   - Kết quả: Hệ thống tự động kết hợp tạo ký tự đặc biệt
+- **Nhận dạng dấu thanh bằng LSTM**: Sử dụng mô hình LSTM để nhận dạng 5 dấu thanh tiếng Việt
 
 ### 📝 **Tạo câu tự động**
 - **Tách từ thông minh**: Tự động chèn khoảng trắng khi không phát hiện tay trong 0.5-1 giây
@@ -57,7 +58,8 @@
 - Thiết kế tập trung vào khả năng tiếp cận
 
 ### ⚡ **Hiệu suất cao**
-- Kiến trúc CNN được tối ưu hóa cho PyTorch
+- **ResNet50 cho nhận dạng ký tự**: Sử dụng kiến trúc ResNet50 được tối ưu hóa cho PyTorch
+- **LSTM cho nhận dạng dấu thanh**: Mô hình LSTM chuyên biệt cho việc nhận dạng dấu thanh
 - Hỗ trợ gia tốc GPU
 - Phát hiện điểm mốc tay hiệu quả bằng MediaPipe
 - Xử lý thời gian thực ở 30+ FPS
@@ -183,12 +185,9 @@ VSLR_TestFinal/
 │   ├── 🎵 tone_predictor.py           # Dự đoán thanh điệu tiếng Việt
 │   └── 🛠️ utils.py                    # Các hàm tiện ích
 ├── 📁 trained_models/                  # Mô hình đã huấn luyện
-│   ├── 🏆 last.pt                     # Mô hình PyTorch cho ký tự
-│   ├── 📊 logs.txt                    # Log huấn luyện
+│   ├── 🏆 last.pt                     # Mô hình ResNet50 cho ký tự
 │   ├── 🎵 lstm_model_final.h5         # Mô hình LSTM cho thanh điệu
-│   ├── 🏷️ lstm_model_label_encoder.pkl # Label encoder cho LSTM
-│   ├── 🧮 mlp_model_final.h5          # Mô hình MLP cho thanh điệu
-│   └── 🏷️ mlp_model_label_encoder.pkl  # Label encoder cho MLP
+│   └── 🏷️ lstm_model_label_encoder.pkl # Label encoder cho LSTM
 └── 📖 README.md                        # Tài liệu dự án
 ```
 
@@ -197,7 +196,7 @@ VSLR_TestFinal/
 - **`app_qt.py`**: Ứng dụng GUI chính sử dụng PyQt5, quản lý giao diện người dùng và tích hợp tất cả các module
 - **`src/frame_processor.py`**: Xử lý khung hình video, tích hợp nhận diện tay và phân loại
 - **`src/text_processor.py`**: Xử lý logic văn bản, ký tự đặc biệt và tạo câu thông minh
-- **`src/tone_predictor.py`**: Dự đoán và áp dụng thanh điệu tiếng Việt
+- **`src/tone_predictor.py`**: Dự đoán và áp dụng thanh điệu tiếng Việt bằng mô hình LSTM
 - **`trained_models/`**: Chứa các mô hình đã được huấn luyện sẵn
 
 ## Đóng góp
